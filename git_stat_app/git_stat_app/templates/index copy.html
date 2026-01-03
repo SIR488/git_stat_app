@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello!</title>
+</head>
+<body>
+    {% for e in data %}
+    <p>разработчик</p>
+    <p>{{ e.pk }}</p>
+    <p>{{ e.name }}</p>
+    <p>{{ e.link }}</p>
+    <p>{{ e.commit_count }}</p>
+    <p>{{ e.commit_year }}</p>
+    {% endfor %}
+</body>
+</html>
