@@ -20,5 +20,6 @@ from . import main_logic
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('',main_logic.func)
+    path('',main_logic.main_page),
+    path('search_user/',main_logic.func)
 ]

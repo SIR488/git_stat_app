@@ -2,15 +2,17 @@ import requests
 from datetime import datetime
 from .models import *
 from django.shortcuts import render
-from .secrets import my_tocken
+#from .secrets import my_tocken
 
 def get_info(username: str, tocken):
-    may_be_dev = Developer.objects.filter(name='Fista6k')
+    may_be_dev = Developer.objects.filter(name=username)
     if len(may_be_dev)!=0:
         return may_be_dev[0]
     
     head = {'Authorization': tocken}
     response = requests.get(f"https://api.github.com/users/{username}/repos", headers = head)
+    if response.status_code == 404:
+        return "Not Found"
     developer = Developer()
     developer.name = username
     developer.commit_year=[0]*13
@@ -59,11 +61,14 @@ def get_info(username: str, tocken):
             dt = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
             dt_now = datetime.now()
             month_index = (dt_now.year - dt.year)*12 + dt_now.month - dt.month
+            login = current_commit["committer"]["login"]
+            if login == 'web-flow': continue
             if month_index < 6:
-                contributor = contributors[current_commit["committer"]["login"]]
+                contributor = contributors[login]
                 contributor.commit_month[month_index]+=1
                 repo.commit_month[month_index]+=1
-            developer.commit_year[month_index]+=1
+            if login == username:#вот тут добавил if///////////////////////////////////////////
+                developer.commit_year[month_index]+=1
         repo.developer_name = username
         repositories.append(repo)
 
@@ -71,10 +76,18 @@ def get_info(username: str, tocken):
     return developer
 
 
+def main_page(request):
+    return render(request, 'main.html')
+
 def func(request):
-    tocken = my_tocken
+    #tocken = my_tocken
+    username = request.GET.get('username')#'Fista6k'
+    data = get_info(username,'')#, tocken
+    if data == "Not Found":
+        return render(request, 'main.html',
+                  {'error': "Not Found"})
     return render(request, 'index.html',
-                  {'data': get_info('Fista6k', tocken)})
+                  {'data': data})
 
 
 def func2(request):
