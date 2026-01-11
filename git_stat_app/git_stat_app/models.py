@@ -29,4 +29,3 @@ class Contributor(models.Model):
     link = models.TextField()
     commit_count = models.IntegerField(default=0)
     commit_month = models.JSONField()
-
