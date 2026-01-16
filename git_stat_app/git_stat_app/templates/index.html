@@ -5,10 +5,27 @@
     <title>Hello!</title>
 </head>
 <body>
-    <p>ник {{ data.name }}</p>
-    <p>ссылка {{ data.link }}</p>
-    <p>количество коммитов {{ data.commit_count }}</p>
-    <p>количество коммитов за год {{ data.commit_year }}</p>
-    <p>стек {{ data.tech_stack }}</p>
+    <p><strong>ник {{ developer.name }}</strong></p>
+    <p>ссылка {{ developer.link }}</p>
+    <p>количество коммитов {{ developer.commit_count }}</p>
+    <p>количество коммитов за год {{ developer.commit_year }}</p>
+    <p>стек {{ developer.tech_stack }}</p>
+    <p><strong>вот тут начинаются репозитории</strong></p>
+    {% for repo, contributors in repo_contributors %}
+    <p><strong>Новый репозиторий</strong></p>
+    <p>название {{ repo.name }}</p>
+    <p>ссылка {{ repo.link }}</p>
+    <p>количество коммитов {{ repo.commit_count }}</p>
+    <p>количество коммитов за полгода {{ repo.commit_month }}</p>
+    <p>стек {{ repo.tech_stack }}</p>
+        <p><strong>вот тут начинаются контрибьюторы</strong></p>
+        {% for contributor in contributors %}
+        <p><strong>Новый контрибьютор</strong></p>
+        <p>имя {{ contributor.name }}</p>
+        <p>ссылка {{ contributor.link }}</p>
+        <p>количество коммитов {{ contributor.commit_count }}</p>
+        <p>количество коммитов за полгода {{ contributor.commit_month }}</p>
+        {% endfor %}
+    {% endfor %}
 </body>
 </html>
