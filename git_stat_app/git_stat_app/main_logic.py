@@ -7,23 +7,21 @@ from django.http import JsonResponse
 def get_info(username: str, token, private: bool):
     may_be_dev = Developer.objects.filter(name=username)
     if len(may_be_dev)!=0:
-        developer = None
-        for dev in may_be_dev:
-            if dev.private == False:
-                developer = dev
-
         for dev in may_be_dev:
             if dev.private == private:
                 developer = dev
-
-        repositories = Repository.objects.filter(developer_name=developer.name, private__in=[private, False])
-        repo_names = [x.name for x in repositories]
-        return developer,repo_names
+                repositories = Repository.objects.filter(developer_name=developer.name, private=private)
+                repo_names = [x.name for x in repositories]
+                return developer,repo_names
     
     head = {}
+    response = None
     if token != '':
-        head = {'Authorization': f'Bearer {token}'}
-    response = requests.get(f"https://api.github.com/users/{username}/repos", headers = head)
+        head = {'Authorization': f'token {token}'}
+        response = requests.get('https://api.github.com/user/repos', headers=head)
+    else:
+        response = requests.get(f"https://api.github.com/users/{username}/repos")
+
     if response.status_code == 404:
         return "Not Found"
     if response.status_code == 403:
@@ -34,6 +32,7 @@ def get_info(username: str, token, private: bool):
     developer.commit_year=[0]*13
     developer.link = f"https://github.com/{username}"
     developer.tech_stack = dict()
+    developer.private = private
 
     repository_data = response.json()
     repo_names = []
@@ -47,7 +46,8 @@ def get_info(username: str, token, private: bool):
         repo.forks_count = current_repo["forks_count"]
         repo.stars = current_repo["stargazers_count"]
         repo.commit_month = [0]*13
-        repo.private = current_repo["private"]
+        repo.developer_name = username
+        repo.private = private
 
         repo_names.append(repo.name)
 
@@ -101,11 +101,10 @@ def get_info(username: str, token, private: bool):
                
         for contributor in contributors.values():
             repo.commit_count += contributor.commit_count
+            contributor.private = private
             contributor.save()
 
         developer.commit_count += repo.commit_count
-        repo.developer_name = username
-        if repo.private: developer.private = True
         repo.save()
     
     developer.save()
@@ -135,11 +134,17 @@ def func(request):
 
 
 def get_repo_stats(request, repo_name):
-    repo = Repository.objects.filter(name=repo_name)[0]
-    if repo.private == True:
-        if repo.developer_name != request.session.get('github_user', None):
-            return
+    repos = Repository.objects.filter(name=repo_name)
+    repo = None
+    for repoi in repos:
+        if repoi.private and repoi.developer_name != request.session.get('github_user', None):
+            continue
+        repo = repoi
+        if repoi.private and repoi.developer_name == request.session.get('github_user', None):
+            break
         
+    if repo is None:return
+
     contributors = Contributor.objects.filter(repository_name=repo.name)
     cont_names = [x.name for x in contributors]
     data = {
@@ -162,13 +167,19 @@ def get_repo_stats(request, repo_name):
 
 
 def get_cont_stats(request, repo_name, cont_name):
-    repo = Repository.objects.filter(name=repo_name)[0]
-    if repo.private == True:
-        if repo.developer_name != request.session.get('github_user', None):
-            return
+    repos = Repository.objects.filter(name=repo_name)
+    repo = None
+    for repoi in repos:
+        if repoi.private and repoi.developer_name != request.session.get('github_user', None):
+            continue
+        repo = repoi
+        if repoi.private and repoi.developer_name == request.session.get('github_user', None):
+            break
+        
+    if repo is None:return
 
 
-    cont = Contributor.objects.filter(repository_name=repo_name, name=cont_name)[0]
+    cont = Contributor.objects.filter(repository_name=repo_name, name=cont_name,private = repo.private)[0]
     data = {
             'contributor': {
                 'name': cont.name,
