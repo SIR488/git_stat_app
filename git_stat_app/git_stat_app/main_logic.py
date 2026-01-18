@@ -1,7 +1,7 @@
 import requests
 from datetime import datetime
 from .models import *
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 
 def get_info(username: str, token, private: bool):
@@ -18,13 +18,15 @@ def get_info(username: str, token, private: bool):
     response = None
     if token != '':
         head = {'Authorization': f'token {token}'}
+    if private:
         response = requests.get('https://api.github.com/user/repos', headers=head)
     else:
-        response = requests.get(f"https://api.github.com/users/{username}/repos")
+        response = requests.get(f"https://api.github.com/users/{username}/repos", headers=head)
 
     if response.status_code == 404:
         return "Not Found"
     if response.status_code == 403:
+        print(response.json())
         return "Forbidden"
 
     developer = Developer()
@@ -71,7 +73,6 @@ def get_info(username: str, token, private: bool):
         if response.status_code == 403:
             return "Forbidden"
         commits_data = response.json()   
-
         for current_commit in commits_data:
             if current_commit["committer"] is None: continue
             date_str = current_commit["commit"]["author"]["date"]
@@ -189,3 +190,28 @@ def get_cont_stats(request, repo_name, cont_name):
             },
         }
     return JsonResponse(data)
+
+
+def delete_data(username, private):
+    may_be_dev = Developer.objects.filter(name=username)
+    if len(may_be_dev)!=0:
+        for dev in may_be_dev:
+            if dev.private == private:
+                developer = dev
+                repositories = Repository.objects.filter(developer_name=developer.name, private=private)
+                for repo in repositories:
+                    Contributor.objects.filter(repository_name=repo.name, private = private).delete()
+                repositories.delete()
+                developer.delete()
+
+
+
+def update_stats(request):
+    github_user = request.session.get('github_user', None)
+    username = request.GET.get('username')
+    if not username:      
+        return redirect('/')
+    private = github_user == username
+    delete_data(username, private)
+    print(username, private)
+    return redirect(f'/search_user/?username={username}')

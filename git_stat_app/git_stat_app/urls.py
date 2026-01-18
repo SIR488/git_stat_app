@@ -20,8 +20,10 @@ from . import main_logic, oauth
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('',main_logic.main_page),#func2
+    path('',main_logic.main_page),
     path('search_user/',main_logic.func),
+    path('update_user/',main_logic.update_stats),
+
     path('repos/<str:repo_name>/', main_logic.get_repo_stats),
     path('conts/<str:repo_name>/<str:cont_name>/', main_logic.get_cont_stats),
 

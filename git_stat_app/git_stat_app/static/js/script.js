@@ -80,3 +80,7 @@ function setupContributorSelect(){
             })
     };
 }
+
+let aUpdate = document.getElementById('update');
+let aDevName = document.getElementById('developer_name');
+aUpdate.href = `/update_user/?username=${aDevName.textContent}`
