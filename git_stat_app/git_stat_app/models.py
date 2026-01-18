@@ -7,6 +7,7 @@ class Developer(models.Model):
     tech_stack = models.JSONField()
     commit_count = models.IntegerField(default=0)
     commit_year = models.JSONField()
+    private = models.BooleanField(default=False)
 
 
 class Repository(models.Model):
@@ -20,7 +21,7 @@ class Repository(models.Model):
     tech_stack = models.JSONField(default=dict())
     commit_count = models.IntegerField(default=0)
     commit_month = models.JSONField()
-
+    private = models.BooleanField(default=False)
 
 
 class Contributor(models.Model):

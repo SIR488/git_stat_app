@@ -2,17 +2,24 @@ import requests
 from datetime import datetime
 from .models import *
 from django.shortcuts import render
-#from .secrets import my_token
+from django.http import JsonResponse
 
-def get_info(username: str, token):
+def get_info(username: str, token, private: bool):
     may_be_dev = Developer.objects.filter(name=username)
     if len(may_be_dev)!=0:
-        developer = may_be_dev[0]
-        repositories = Repository.objects.filter(developer_name=developer.name)
-        repo_contributors = dict()
-        for repo in repositories:
-            repo_contributors[repo] = Contributor.objects.filter(repository_name=repo.name)
-        return developer, list(repo_contributors.items())
+        developer = None
+        for dev in may_be_dev:
+            if dev.private == False:
+                developer = dev
+
+        for dev in may_be_dev:
+            if dev.private == private:
+                developer = dev
+
+        repositories = Repository.objects.filter(developer_name=developer.name, private__in=[private, False])
+        repo_names = [x.name for x in repositories]
+        return developer,repo_names
+    
     head = {}
     if token != '':
         head = {'Authorization': f'Bearer {token}'}
@@ -29,8 +36,9 @@ def get_info(username: str, token):
     developer.tech_stack = dict()
 
     repository_data = response.json()
-    repo_contributors = dict()
+    repo_names = []
     for current_repo in repository_data:
+        if current_repo["private"] == True and not private: continue
         repo = Repository()
         repo.name = current_repo["name"]
         repo.link = current_repo["html_url"]
@@ -38,11 +46,13 @@ def get_info(username: str, token):
         repo.updated_at = current_repo["updated_at"]
         repo.forks_count = current_repo["forks_count"]
         repo.stars = current_repo["stargazers_count"]
-        repo.commit_month = [0]*6
+        repo.commit_month = [0]*13
+        repo.private = current_repo["private"]
+
+        repo_names.append(repo.name)
 
         if current_repo["size"] == 0:
             repo.save()
-            repo_contributors[repo] = []#попправить тут
             continue
 
         response = requests.get(f"https://api.github.com/repos/{username}/{repo.name}/languages", headers = head)
@@ -63,69 +73,108 @@ def get_info(username: str, token):
         commits_data = response.json()   
 
         for current_commit in commits_data:
-            try:
-                if current_commit["committer"] is None: continue
-            except:
-                raise Exception(commits_data)
+            if current_commit["committer"] is None: continue
             date_str = current_commit["commit"]["author"]["date"]
             dt = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
             dt_now = datetime.now()
-            month_index = (dt_now.year - dt.year)*12 + dt_now.month - dt.month     
-            login = current_commit["committer"]["login"]
+            month_index = (dt_now.year - dt.year)*12 + dt_now.month - dt.month
+            login = current_commit["author"]["login"]
             if login == 'web-flow': continue
-            if month_index < 6:
-                if login in contributors:
-                    contributor = contributors[login]
 
-                    contributor.commit_month[month_index]+=1
-                else:
-                    contributor = Contributor()
-                    contributor.name = login
-                    contributor.link = f"https://github.com/{login}"
-                    contributor.repository_name = repo.name
-                    contributor.commit_month = [0]*6
-                    contributors[login] = contributor
+            if login not in contributors:
+                contributor = Contributor()
+                contributor.name = login
+                contributor.link = f"https://github.com/{login}"
+                contributor.repository_name = repo.name
+                contributor.commit_month = [0]*13
+                contributors[login] = contributor
 
-                    contributor.commit_month[month_index]+=1
-                
+            contributor = contributors[login]
+            contributor.commit_count+=1
+            if month_index < 13:    
+                contributor.commit_month[month_index]+=1
                 repo.commit_month[month_index]+=1
 
             if login == username:#вот тут добавил if///////////////////////////////////////////
                 developer.commit_year[month_index]+=1
-
+            
                
         for contributor in contributors.values():
-            contributor.commit_count = sum(contributor.commit_month)
             repo.commit_count += contributor.commit_count
             contributor.save()
 
         developer.commit_count += repo.commit_count
         repo.developer_name = username
+        if repo.private: developer.private = True
         repo.save()
-        repo_contributors[repo] = contributors.values()
-
+    
     developer.save()
-    return developer, list(repo_contributors.items())
+    return developer, repo_names
 
 
 def main_page(request):
     return render(request, 'main.html')
 
 def func(request):
-    #token = my_token
-    username = request.GET.get('username')#'Fista6k'
-    data = get_info(username,'')#, token
+    token = request.session.get('github_token', '')
+    github_user = request.session.get('github_user', None)
+    username = request.GET.get('username')
+    private = github_user == username
+    data = get_info(username, token, private)
     if data == "Not Found":
         return render(request, 'main.html',
                   {'error': "Not Found"})
     if data == "Forbidden":
         return render(request, 'main.html',
                   {'error': "Сорян, апишка ограничена"})
-    developer, repo_contributors = data
-    return render(request, 'index.html',
-                  {'developer': developer, 'repo_contributors': repo_contributors})
+
+    developer, repo_names = data    
+    return render(request, 'statistics.html',
+                  {'developer': developer, 'repositories': repo_names})
 
 
-def func2(request):
-    return render(request, 'index copy.html',
-                  {'data': Developer.objects.all()})
+
+def get_repo_stats(request, repo_name):
+    repo = Repository.objects.filter(name=repo_name)[0]
+    if repo.private == True:
+        if repo.developer_name != request.session.get('github_user', None):
+            return
+        
+    contributors = Contributor.objects.filter(repository_name=repo.name)
+    cont_names = [x.name for x in contributors]
+    data = {
+            'repo': {
+                'name': repo.name,
+                'link': repo.link,
+                'created_at':repo.created_at,
+                'updated_at':repo.updated_at,
+                'forks_count': repo.forks_count,
+                'stars': repo.stars,
+                'tech_stack': repo.tech_stack,
+                'commits': repo.commit_count,
+                'commit_month':repo.commit_month
+
+            },
+            'contributors': cont_names
+        }
+    return JsonResponse(data)
+
+
+
+def get_cont_stats(request, repo_name, cont_name):
+    repo = Repository.objects.filter(name=repo_name)[0]
+    if repo.private == True:
+        if repo.developer_name != request.session.get('github_user', None):
+            return
+
+
+    cont = Contributor.objects.filter(repository_name=repo_name, name=cont_name)[0]
+    data = {
+            'contributor': {
+                'name': cont.name,
+                'link': cont.link,
+                'commits': cont.commit_count,
+                'commit_month':cont.commit_month
+            },
+        }
+    return JsonResponse(data)
