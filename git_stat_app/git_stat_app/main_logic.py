@@ -146,7 +146,7 @@ def get_repo_stats(request, repo_name):
         
     if repo is None:return
 
-    contributors = Contributor.objects.filter(repository_name=repo.name)
+    contributors = Contributor.objects.filter(repository_name=repo.name,private = repo.private)
     cont_names = [x.name for x in contributors]
     data = {
             'repo': {
