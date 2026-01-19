@@ -16,18 +16,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from . import main_logic, oauth
+from . import main_logic, oauth, views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('',main_logic.main_page),
-    path('search_user/',main_logic.func),
-    path('update_user/',main_logic.update_stats),
+    path('', views.main_page),
+    path('search_user/', views.get_info),
+    path('update_user/', views.update_stats),
 
     path('repos/<str:repo_name>/', main_logic.get_repo_stats),
     path('conts/<str:repo_name>/<str:cont_name>/', main_logic.get_cont_stats),
 
-    path('login/', oauth.github_login, name='github_login'),
-    path('auth/github/callback/', oauth.github_callback, name='github_callback'),
-    path('logout/', oauth.logout_view, name='logout'),
+    path('login/', oauth.github_login),
+    path('auth/github/callback/', oauth.github_callback),
+    path('logout/', oauth.logout_view),
 ]

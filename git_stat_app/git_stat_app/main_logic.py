@@ -1,10 +1,9 @@
 import requests
 from datetime import datetime
 from .models import *
-from django.shortcuts import render, redirect
 from django.http import JsonResponse
 
-def get_info(username: str, token, private: bool):
+def search_user(username: str, token, private: bool):
     may_be_dev = Developer.objects.filter(name=username)
     if len(may_be_dev)!=0:
         for dev in may_be_dev:
@@ -112,26 +111,17 @@ def get_info(username: str, token, private: bool):
     return developer, repo_names
 
 
-def main_page(request):
-    return render(request, 'main.html')
-
-def func(request):
-    token = request.session.get('github_token', '')
-    github_user = request.session.get('github_user', None)
-    username = request.GET.get('username')
-    private = github_user == username
-    data = get_info(username, token, private)
-    if data == "Not Found":
-        return render(request, 'main.html',
-                  {'error': "Not Found"})
-    if data == "Forbidden":
-        return render(request, 'main.html',
-                  {'error': "Сорян, апишка ограничена"})
-
-    developer, repo_names = data    
-    return render(request, 'statistics.html',
-                  {'developer': developer, 'repositories': repo_names})
-
+def delete_data(username, private):
+    may_be_dev = Developer.objects.filter(name=username)
+    if len(may_be_dev)!=0:
+        for dev in may_be_dev:
+            if dev.private == private:
+                developer = dev
+                repositories = Repository.objects.filter(developer_name=developer.name, private=private)
+                for repo in repositories:
+                    Contributor.objects.filter(repository_name=repo.name, private = private).delete()
+                repositories.delete()
+                developer.delete()
 
 
 def get_repo_stats(request, repo_name):
@@ -166,7 +156,6 @@ def get_repo_stats(request, repo_name):
     return JsonResponse(data)
 
 
-
 def get_cont_stats(request, repo_name, cont_name):
     repos = Repository.objects.filter(name=repo_name)
     repo = None
@@ -190,28 +179,3 @@ def get_cont_stats(request, repo_name, cont_name):
             },
         }
     return JsonResponse(data)
-
-
-def delete_data(username, private):
-    may_be_dev = Developer.objects.filter(name=username)
-    if len(may_be_dev)!=0:
-        for dev in may_be_dev:
-            if dev.private == private:
-                developer = dev
-                repositories = Repository.objects.filter(developer_name=developer.name, private=private)
-                for repo in repositories:
-                    Contributor.objects.filter(repository_name=repo.name, private = private).delete()
-                repositories.delete()
-                developer.delete()
-
-
-
-def update_stats(request):
-    github_user = request.session.get('github_user', None)
-    username = request.GET.get('username')
-    if not username:      
-        return redirect('/')
-    private = github_user == username
-    delete_data(username, private)
-    print(username, private)
-    return redirect(f'/search_user/?username={username}')
