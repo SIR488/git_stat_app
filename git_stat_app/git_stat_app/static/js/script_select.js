@@ -90,10 +90,10 @@ function loadContributorData(repoName, contName) {
             `;
             
             // Создаем гистограмму коммитов контрибьютора
-            if (data.contributor.commit_month && Array.isArray(data.contributor.commit_month) && data.contributor.commit_month.length > 0) {
+            if (data.contributor.commit_year && Array.isArray(data.contributor.commit_year) && data.contributor.commit_year.length > 0) {
                 const totalContribCommits = data.contributor.commit_count || 
-                    data.contributor.commit_month.reduce((sum, val) => sum + val, 0);
-                createCommitsHistogram(data.contributor.commit_month, 'contribCommitsChart', totalContribCommits);
+                    data.contributor.commit_year.reduce((sum, val) => sum + val, 0);
+                createCommitsHistogram(data.contributor.commit_year, 'contribCommitsChart', totalContribCommits);
             } else {
                 document.querySelector('#contribCommitsChart').parentElement.innerHTML = 
                     '<p style="text-align: center; color: #57606a; padding: 50px 0;">Нет данных о коммитах</p>';

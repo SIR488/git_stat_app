@@ -20,7 +20,7 @@ class Repository(models.Model):
     stars = models.IntegerField()
     tech_stack = models.JSONField(default=dict())
     commit_count = models.IntegerField(default=0)
-    commit_month = models.JSONField()
+    commit_year = models.JSONField()
     private = models.BooleanField(default=False)
 
 
@@ -29,5 +29,5 @@ class Contributor(models.Model):
     name = models.CharField(max_length=255)
     link = models.TextField()
     commit_count = models.IntegerField(default=0)
-    commit_month = models.JSONField()
+    commit_year = models.JSONField()
     private = models.BooleanField(default=False)

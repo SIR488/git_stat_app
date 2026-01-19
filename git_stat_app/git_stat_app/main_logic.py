@@ -47,7 +47,7 @@ def get_info(username: str, token, private: bool):
         repo.updated_at = current_repo["updated_at"]
         repo.forks_count = current_repo["forks_count"]
         repo.stars = current_repo["stargazers_count"]
-        repo.commit_month = [0]*13
+        repo.commit_year = [0]*13
         repo.developer_name = username
         repo.private = private
 
@@ -87,14 +87,14 @@ def get_info(username: str, token, private: bool):
                 contributor.name = login
                 contributor.link = f"https://github.com/{login}"
                 contributor.repository_name = repo.name
-                contributor.commit_month = [0]*13
+                contributor.commit_year = [0]*13
                 contributors[login] = contributor
 
             contributor = contributors[login]
             contributor.commit_count+=1
             if month_index < 13:    
-                contributor.commit_month[month_index]+=1
-                repo.commit_month[month_index]+=1
+                contributor.commit_year[month_index]+=1
+                repo.commit_year[month_index]+=1
 
             if login == username:#вот тут добавил if///////////////////////////////////////////
                 developer.commit_year[month_index]+=1
@@ -158,7 +158,7 @@ def get_repo_stats(request, repo_name):
                 'stars': repo.stars,
                 'tech_stack': repo.tech_stack,
                 'commits': repo.commit_count,
-                'commit_month':repo.commit_month
+                'commit_year':repo.commit_year
 
             },
             'contributors': cont_names
@@ -186,7 +186,7 @@ def get_cont_stats(request, repo_name, cont_name):
                 'name': cont.name,
                 'link': cont.link,
                 'commits': cont.commit_count,
-                'commit_month':cont.commit_month
+                'commit_year':cont.commit_year
             },
         }
     return JsonResponse(data)

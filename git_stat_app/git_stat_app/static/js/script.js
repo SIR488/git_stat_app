@@ -62,9 +62,9 @@ function loadRepoData(repoName) {
             }
             
             // Создаем гистограмму для коммитов репозитория - ВОТ ТУТ ВСТАВЛЯЕМ
-            if (data.repo.commit_month && Array.isArray(data.repo.commit_month) && data.repo.commit_month.length > 0) {
-                const totalRepoCommits = data.repo.commit_month.reduce((sum, val) => sum + val, 0);
-                createCommitsHistogram(data.repo.commit_month, 'repoCommitsChart', totalRepoCommits);
+            if (data.repo.commit_year && Array.isArray(data.repo.commit_year) && data.repo.commit_year.length > 0) {
+                const totalRepoCommits = data.repo.commit_year.reduce((sum, val) => sum + val, 0);
+                createCommitsHistogram(data.repo.commit_year, 'repoCommitsChart', totalRepoCommits);
             } else {
                 document.querySelector('#repoCommitsChart').parentElement.innerHTML = 
                     '<p style="text-align: center; color: #57606a; padding: 50px 0;">Нет данных о коммитах</p>';
