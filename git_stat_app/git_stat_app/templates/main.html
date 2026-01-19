@@ -8,15 +8,7 @@
     <title>GitStat</title>
 </head>
 <body>
-    <header>
-        <h3>GitStat</h3>
-        {% if request.session.github_token %}
-        <div class="name"><strong>{{ request.session.github_user }}</strong></div>
-        <a href="/logout/"><button>Выйти</button></a>
-        {% else %}
-        <a href="/login/"><button>Войти</button></a>
-        {% endif %}
-    </header>
+    {% include 'header.html' %}
     <main>
         <div class="choice">
         <ul class="window">

@@ -3,16 +3,8 @@ from datetime import datetime
 from .models import *
 from django.http import JsonResponse
 
-def search_user(username: str, token, private: bool):
-    may_be_dev = Developer.objects.filter(name=username)
-    if len(may_be_dev)!=0:
-        for dev in may_be_dev:
-            if dev.private == private:
-                developer = dev
-                repositories = Repository.objects.filter(developer_name=developer.name, private=private)
-                repo_names = [x.name for x in repositories]
-                return developer,repo_names
-    
+
+def search_user(username: str, token, private: bool):    
     head = {}
     response = None
     if token != '':
@@ -90,23 +82,22 @@ def search_user(username: str, token, private: bool):
                 contributors[login] = contributor
 
             contributor = contributors[login]
-            contributor.commit_count+=1
             if month_index < 13:    
                 contributor.commit_year[month_index]+=1
                 repo.commit_year[month_index]+=1
 
-            if login == username:#вот тут добавил if///////////////////////////////////////////
+            if login == username:#считаем для developer
                 developer.commit_year[month_index]+=1
             
-               
         for contributor in contributors.values():
+            contributor.commit_count = sum(contributor.commit_year)
             repo.commit_count += contributor.commit_count
             contributor.private = private
             contributor.save()
 
         developer.commit_count += repo.commit_count
         repo.save()
-    
+
     developer.save()
     return developer, repo_names
 
@@ -168,14 +159,13 @@ def get_cont_stats(request, repo_name, cont_name):
         
     if repo is None:return
 
-
-    cont = Contributor.objects.filter(repository_name=repo_name, name=cont_name,private = repo.private)[0]
+    contibutor = Contributor.objects.filter(repository_name=repo_name, name=cont_name,private = repo.private)[0]
     data = {
             'contributor': {
-                'name': cont.name,
-                'link': cont.link,
-                'commits': cont.commit_count,
-                'commit_year':cont.commit_year
+                'name': contibutor.name,
+                'link': contibutor.link,
+                'commits': contibutor.commit_count,
+                'commit_year':contibutor.commit_year
             },
         }
     return JsonResponse(data)

@@ -1,4 +1,3 @@
-// my_chart.js
 // Универсальная функция для создания круговой диаграммы в стиле GitHub
 function createDoughnutChart(techStackData, canvasId, titleText = 'Стек технологий', unitText = 'всего коммитов') {
     const canvas = document.getElementById(canvasId);
