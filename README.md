@@ -15,11 +15,11 @@
 
 •	Демонстрация:
 
-![alt text](image.png)
+![alt text](main_page.png)
 Главный экран
-![alt text](image-1.png)
+![alt text](developer.png)
 Экран со статистикой (видно только разработчика) + авторизованный пользователь
-![alt text](image-2.png)
+![alt text](repository.png)
 Экран со статистикой (видно только выбранный репозиторий) 
 
 •	Установка и запуск:

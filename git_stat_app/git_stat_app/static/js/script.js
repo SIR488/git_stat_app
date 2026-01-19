@@ -31,7 +31,6 @@ function loadRepoData(repoName) {
             </div>
             <div class="windows">
                 <div class="window">
-                    <h4>Стек технологий репозитория</h4>
                     <div style="position: relative; min-height: 300px; width: 400px;">
                         <canvas id="repoStackChart"></canvas>
                     </div>
@@ -53,7 +52,7 @@ function loadRepoData(repoName) {
                     data.repo.tech_stack, 
                     'repoStackChart', 
                     'Стек технологий репозитория', 
-                    'всего файлов в репозитории'
+                    'всего байт'
                 );
             } else {
                 console.log('Нет данных о стеке технологий репозитория');
